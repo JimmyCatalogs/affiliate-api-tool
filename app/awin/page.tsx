@@ -50,6 +50,13 @@ interface AdvertiserReport {
   saleAmount: { amount: number; currency: string }
 }
 
+const _cache: {
+  programmes?: Programme[]
+  promotions?: Promotion[]
+  transactions?: Transaction[]
+  advertiserReport?: AdvertiserReport[]
+} = {}
+
 const STATUS_COLOURS: Record<string, string> = {
   approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
   pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400',
@@ -80,41 +87,69 @@ export default function AwinPage() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetch('/api/awin/programmes')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error)
-        setProgrammes(Array.isArray(data) ? data : data.programmes ?? [])
-      })
-      .catch((e) => setErrorProgrammes(e.message))
-      .finally(() => setLoadingProgrammes(false))
+    if (_cache.programmes) {
+      setProgrammes(_cache.programmes)
+      setLoadingProgrammes(false)
+    } else {
+      fetch('/api/awin/programmes')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error)
+          const result = Array.isArray(data) ? data : data.programmes ?? []
+          _cache.programmes = result
+          setProgrammes(result)
+        })
+        .catch((e) => setErrorProgrammes(e.message))
+        .finally(() => setLoadingProgrammes(false))
+    }
 
-    fetch('/api/awin/promotions')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error)
-        setPromotions(Array.isArray(data) ? data : data.promotions ?? [])
-      })
-      .catch((e) => setErrorPromotions(e.message))
-      .finally(() => setLoadingPromotions(false))
+    if (_cache.promotions) {
+      setPromotions(_cache.promotions)
+      setLoadingPromotions(false)
+    } else {
+      fetch('/api/awin/promotions')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error)
+          const result = Array.isArray(data) ? data : data.promotions ?? []
+          _cache.promotions = result
+          setPromotions(result)
+        })
+        .catch((e) => setErrorPromotions(e.message))
+        .finally(() => setLoadingPromotions(false))
+    }
 
-    fetch('/api/awin/transactions')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error)
-        setTransactions(Array.isArray(data) ? data : [])
-      })
-      .catch((e) => setErrorTransactions(e.message))
-      .finally(() => setLoadingTransactions(false))
+    if (_cache.transactions) {
+      setTransactions(_cache.transactions)
+      setLoadingTransactions(false)
+    } else {
+      fetch('/api/awin/transactions')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error)
+          const result = Array.isArray(data) ? data : []
+          _cache.transactions = result
+          setTransactions(result)
+        })
+        .catch((e) => setErrorTransactions(e.message))
+        .finally(() => setLoadingTransactions(false))
+    }
 
-    fetch('/api/awin/reports/advertiser')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error)
-        setAdvertiserReport(Array.isArray(data) ? data : [])
-      })
-      .catch((e) => setErrorReport(e.message))
-      .finally(() => setLoadingReport(false))
+    if (_cache.advertiserReport) {
+      setAdvertiserReport(_cache.advertiserReport)
+      setLoadingReport(false)
+    } else {
+      fetch('/api/awin/reports/advertiser')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error)
+          const result = Array.isArray(data) ? data : []
+          _cache.advertiserReport = result
+          setAdvertiserReport(result)
+        })
+        .catch((e) => setErrorReport(e.message))
+        .finally(() => setLoadingReport(false))
+    }
   }, [])
 
   const filtered = programmes.filter((p) =>

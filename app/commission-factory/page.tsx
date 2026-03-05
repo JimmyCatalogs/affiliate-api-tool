@@ -82,6 +82,15 @@ interface Transaction {
   SaleValue?: number
 }
 
+const _cache: {
+  merchants?: Merchant[]
+  datafeeds?: DataFeed[]
+  banners?: Banner[]
+  coupons?: Coupon[]
+  promotions?: Promotion[]
+  transactions?: Transaction[]
+} = {}
+
 export default function CommissionFactoryPage() {
   const [merchants, setMerchants] = useState<Merchant[]>([])
   const [datafeeds, setDatafeeds] = useState<DataFeed[]>([])
@@ -112,90 +121,142 @@ export default function CommissionFactoryPage() {
   const [productSearch, setProductSearch] = useState('')
 
   function fetchMerchants() {
+    if (_cache.merchants) {
+      setMerchants(_cache.merchants)
+      setLoadingMerchants(false)
+      return
+    }
     setLoadingMerchants(true)
     setErrorMerchants(null)
     fetch('/api/commission-factory/merchants')
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
-        setMerchants(Array.isArray(data) ? data : [])
+        const result = Array.isArray(data) ? data : []
+        _cache.merchants = result
+        setMerchants(result)
       })
       .catch((e) => setErrorMerchants(e.message))
       .finally(() => setLoadingMerchants(false))
   }
 
   function fetchDatafeeds() {
+    if (_cache.datafeeds) {
+      setDatafeeds(_cache.datafeeds)
+      setLoadingFeeds(false)
+      return
+    }
     setLoadingFeeds(true)
     setErrorFeeds(null)
     fetch('/api/commission-factory/datafeeds')
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
-        setDatafeeds(Array.isArray(data) ? data : [])
+        const result = Array.isArray(data) ? data : []
+        _cache.datafeeds = result
+        setDatafeeds(result)
       })
       .catch((e) => setErrorFeeds(e.message))
       .finally(() => setLoadingFeeds(false))
   }
 
   function fetchBanners() {
+    if (_cache.banners) {
+      setBanners(_cache.banners)
+      setLoadingBanners(false)
+      return
+    }
     setLoadingBanners(true)
     setErrorBanners(null)
     fetch('/api/commission-factory/banners')
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
-        setBanners(Array.isArray(data) ? data : [])
+        const result = Array.isArray(data) ? data : []
+        _cache.banners = result
+        setBanners(result)
       })
       .catch((e) => setErrorBanners(e.message))
       .finally(() => setLoadingBanners(false))
   }
 
   function fetchCoupons() {
+    if (_cache.coupons) {
+      setCoupons(_cache.coupons)
+      setLoadingCoupons(false)
+      return
+    }
     setLoadingCoupons(true)
     setErrorCoupons(null)
     fetch('/api/commission-factory/coupons')
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
-        setCoupons(Array.isArray(data) ? data : [])
+        const result = Array.isArray(data) ? data : []
+        _cache.coupons = result
+        setCoupons(result)
       })
       .catch((e) => setErrorCoupons(e.message))
       .finally(() => setLoadingCoupons(false))
   }
 
   function fetchPromotions() {
+    if (_cache.promotions) {
+      setPromotions(_cache.promotions)
+      setLoadingPromotions(false)
+      return
+    }
     setLoadingPromotions(true)
     setErrorPromotions(null)
     fetch('/api/commission-factory/promotions')
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
-        setPromotions(Array.isArray(data) ? data : [])
+        const result = Array.isArray(data) ? data : []
+        _cache.promotions = result
+        setPromotions(result)
       })
       .catch((e) => setErrorPromotions(e.message))
       .finally(() => setLoadingPromotions(false))
   }
 
   function fetchTransactions() {
+    if (_cache.transactions) {
+      setTransactions(_cache.transactions)
+      setLoadingTransactions(false)
+      return
+    }
     setLoadingTransactions(true)
     setErrorTransactions(null)
     fetch('/api/commission-factory/transactions')
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
-        setTransactions(Array.isArray(data) ? data : [])
+        const result = Array.isArray(data) ? data : []
+        _cache.transactions = result
+        setTransactions(result)
       })
       .catch((e) => setErrorTransactions(e.message))
       .finally(() => setLoadingTransactions(false))
   }
 
   useEffect(() => {
-    fetchMerchants()
-    setTimeout(fetchDatafeeds, 400)
-    setTimeout(fetchBanners, 800)
-    setTimeout(fetchCoupons, 1200)
-    setTimeout(fetchPromotions, 1600)
-    setTimeout(fetchTransactions, 2000)
+    const allCached = _cache.merchants && _cache.datafeeds && _cache.banners && _cache.coupons && _cache.promotions && _cache.transactions
+    if (allCached) {
+      fetchMerchants()
+      fetchDatafeeds()
+      fetchBanners()
+      fetchCoupons()
+      fetchPromotions()
+      fetchTransactions()
+    } else {
+      fetchMerchants()
+      setTimeout(fetchDatafeeds, 400)
+      setTimeout(fetchBanners, 800)
+      setTimeout(fetchCoupons, 1200)
+      setTimeout(fetchPromotions, 1600)
+      setTimeout(fetchTransactions, 2000)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
