@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const tabs = [
+  { label: 'Brands', href: '/' },
   { label: 'Awin', href: '/awin' },
   { label: 'Commission Factory', href: '/commission-factory' },
 ]
@@ -19,7 +20,7 @@ export default function TabNav() {
             Affiliate Networks
           </span>
           {tabs.map((tab) => {
-            const active = pathname.startsWith(tab.href)
+            const active = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href)
             return (
               <Link
                 key={tab.href}
