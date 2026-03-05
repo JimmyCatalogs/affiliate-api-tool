@@ -67,10 +67,10 @@ export default function AwinPage() {
     <div className="space-y-8">
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             Joined Programmes
             {!loadingProgrammes && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
+              <span className="ml-2 text-sm font-normal text-slate-400 dark:text-slate-500">
                 ({filtered.length} of {programmes.length})
               </span>
             )}
@@ -80,40 +80,40 @@ export default function AwinPage() {
             placeholder="Search by name or sector..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
           />
         </div>
 
         {loadingProgrammes && (
-          <div className="text-sm text-gray-500 animate-pulse">Loading programmes...</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">Loading programmes...</div>
         )}
 
         {errorProgrammes && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
             {errorProgrammes}
           </div>
         )}
 
         {!loadingProgrammes && !errorProgrammes && filtered.length === 0 && (
-          <div className="text-sm text-gray-500">No programmes found.</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">No programmes found.</div>
         )}
 
         {!loadingProgrammes && !errorProgrammes && filtered.length > 0 && (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800/60">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Programme</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Sector</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Commission</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Website</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Programme</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sector</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Commission</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Website</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filtered.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">
+                  <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-2">
                         {p.logoUrl && (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -122,19 +122,19 @@ export default function AwinPage() {
                         {p.name}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{p.primarySector ?? '-'}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{p.primarySector ?? '-'}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                           p.status === 'joined'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                         }`}
                       >
                         {p.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {p.commissionRange
                         ? `${p.commissionRange.min ?? '?'}% – ${p.commissionRange.max ?? '?'}%`
                         : '-'}
@@ -145,7 +145,7 @@ export default function AwinPage() {
                           href={`https://${p.displayUrl}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline truncate max-w-[160px] block"
+                          className="text-indigo-600 dark:text-indigo-400 hover:underline truncate max-w-[160px] block"
                         >
                           {p.displayUrl}
                         </a>
@@ -162,52 +162,52 @@ export default function AwinPage() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Active Promotions</h2>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">Active Promotions</h2>
 
         {loadingPromotions && (
-          <div className="text-sm text-gray-500 animate-pulse">Loading promotions...</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">Loading promotions...</div>
         )}
 
         {errorPromotions && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
             {errorPromotions}
           </div>
         )}
 
         {!loadingPromotions && !errorPromotions && promotions.length === 0 && (
-          <div className="text-sm text-gray-500">No active promotions.</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">No active promotions.</div>
         )}
 
         {!loadingPromotions && !errorPromotions && promotions.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {promotions.slice(0, 60).map((promo, i) => (
-              <div key={promo.promotionId ?? i} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <div key={promo.promotionId ?? i} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="font-medium text-gray-900 text-sm leading-tight">
+                  <span className="font-medium text-slate-900 dark:text-slate-100 text-sm leading-tight">
                     {promo.advertiserName ?? 'Unknown Advertiser'}
                   </span>
                   {promo.type && (
-                    <span className="shrink-0 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    <span className="shrink-0 inline-flex rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-400">
                       {promo.type}
                     </span>
                   )}
                 </div>
                 {promo.title && (
-                  <p className="text-sm text-gray-700 mb-1">{promo.title}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 mb-1">{promo.title}</p>
                 )}
                 {promo.description && (
-                  <p className="text-xs text-gray-500 line-clamp-2">{promo.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{promo.description}</p>
                 )}
                 {promo.code && (
                   <div className="mt-2 flex items-center gap-1">
-                    <span className="text-xs text-gray-500">Code:</span>
-                    <code className="text-xs bg-gray-100 rounded px-1.5 py-0.5 font-mono text-gray-800">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Code:</span>
+                    <code className="text-xs bg-slate-100 dark:bg-slate-800 rounded px-1.5 py-0.5 font-mono text-slate-800 dark:text-slate-200">
                       {promo.code}
                     </code>
                   </div>
                 )}
                 {(promo.startDate || promo.endDate) && (
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                     {promo.startDate && `From ${promo.startDate.slice(0, 10)}`}
                     {promo.startDate && promo.endDate && ' · '}
                     {promo.endDate && `Until ${promo.endDate.slice(0, 10)}`}
