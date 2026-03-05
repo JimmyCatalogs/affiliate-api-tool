@@ -11,15 +11,23 @@ export async function GET() {
     )
   }
 
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - 30)
+
+  const fmt = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, 'Z')
+
+  const params = new URLSearchParams({
+    startDate: fmt(start),
+    endDate: fmt(end),
+    timezone: 'UTC',
+    dateType: 'transaction',
+  })
+
   const res = await fetch(
-    `https://api.awin.com/publisher/${publisherId}/promotions`,
+    `https://api.awin.com/publishers/${publisherId}/transactions/?${params}`,
     {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ filters: { membership: 'joined', status: 'active' } }),
+      headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     }
   )
@@ -33,5 +41,5 @@ export async function GET() {
   }
 
   const data = await res.json()
-  return NextResponse.json(data?.data ?? data)
+  return NextResponse.json(Array.isArray(data) ? data : data.data ?? data)
 }

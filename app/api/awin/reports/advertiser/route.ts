@@ -11,15 +11,24 @@ export async function GET() {
     )
   }
 
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - 30)
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10)
+
+  const params = new URLSearchParams({
+    startDate: fmt(start),
+    endDate: fmt(end),
+    region: 'US',
+    timezone: 'UTC',
+    dateType: 'transaction',
+  })
+
   const res = await fetch(
-    `https://api.awin.com/publisher/${publisherId}/promotions`,
+    `https://api.awin.com/publishers/${publisherId}/reports/advertiser?${params}`,
     {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ filters: { membership: 'joined', status: 'active' } }),
+      headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     }
   )
@@ -33,5 +42,5 @@ export async function GET() {
   }
 
   const data = await res.json()
-  return NextResponse.json(data?.data ?? data)
+  return NextResponse.json(Array.isArray(data) ? data : data.data ?? data)
 }
