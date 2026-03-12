@@ -7,6 +7,7 @@ const tabs = [
   { label: 'Brands', href: '/' },
   { label: 'Awin', href: '/awin' },
   { label: 'Commission Factory', href: '/commission-factory' },
+  { label: 'Impact', href: '/impact' },
 ]
 
 export default function TabNav() {

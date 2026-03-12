@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react'
 interface Brand {
   id: string
   name: string
-  network: 'Awin' | 'Commission Factory'
+  network: 'Awin' | 'Commission Factory' | 'Impact'
   logoUrl?: string
   sector?: string
   status: string
@@ -14,6 +14,19 @@ interface Brand {
   hasPromos: boolean
   hasFeed: boolean
   networkHref: string
+}
+
+interface ImpactAd {
+  Id?: number | string
+  Name?: string
+  CampaignId?: number | string
+  CampaignName?: string
+  Type?: string
+  SubType?: string
+  TrackingLink?: string
+  ImageLink?: string
+  Width?: number
+  Height?: number
 }
 
 interface AwinPromotion {
@@ -58,7 +71,7 @@ interface CFPromo {
 }
 
 type SortKey = 'commission' | 'name'
-type NetworkFilter = 'all' | 'Awin' | 'Commission Factory'
+type NetworkFilter = 'all' | 'Awin' | 'Commission Factory' | 'Impact'
 
 const _cache: { brands?: Brand[]; promotions?: AwinPromotion[] } = {}
 
@@ -66,6 +79,11 @@ const _cfCollateralCache: {
   banners?: CFBanner[]
   coupons?: CFCoupon[]
   promos?: CFPromo[]
+  loaded?: boolean
+} = {}
+
+const _impactAdsCache: {
+  ads?: ImpactAd[]
   loaded?: boolean
 } = {}
 
@@ -79,7 +97,8 @@ function downloadCSV(
   awinPromos: AwinPromotion[],
   cfBanners: CFBanner[],
   cfCoupons: CFCoupon[],
-  cfPromos: CFPromo[]
+  cfPromos: CFPromo[],
+  impactAds: ImpactAd[]
 ) {
   const rows: string[][] = [
     ['Type', 'Name / Description', 'Code', 'Tracking URL', 'Image URL', 'Width', 'Height', 'Start Date', 'End / Expiry Date'],
@@ -96,6 +115,9 @@ function downloadCSV(
   }
   for (const b of cfBanners) {
     rows.push(['Banner', b.Name ?? '', '', b.TrackingUrl ?? '', b.ImageUrl ?? '', String(b.Width ?? ''), String(b.Height ?? ''), '', fmtDate(b.ExpiryDate)])
+  }
+  for (const a of impactAds) {
+    rows.push(['Ad', a.Name ?? '', '', a.TrackingLink ?? '', a.ImageLink ?? '', String(a.Width ?? ''), String(a.Height ?? ''), '', ''])
   }
 
   const csv = rows
@@ -126,17 +148,36 @@ export default function BrandsPage() {
 
     async function load() {
       try {
-        const [progRes, promoRes, merchantRes, feedRes] = await Promise.all([
+        const [progRes, promoRes, merchantRes, feedRes, contractsRes, adsRes] = await Promise.all([
           fetch('/api/awin/programmes'),
           fetch('/api/awin/promotions'),
           fetch('/api/commission-factory/merchants'),
           fetch('/api/commission-factory/datafeeds'),
+          fetch('/api/impact/contracts'),
+          fetch('/api/impact/ads'),
         ])
 
         const programmes = progRes.ok ? await progRes.json() : []
         const promotions: AwinPromotion[] = promoRes.ok ? await promoRes.json() : []
         const merchants = merchantRes.ok ? await merchantRes.json() : []
         const datafeeds = feedRes.ok ? await feedRes.json() : []
+        const contractsData = contractsRes.ok ? await contractsRes.json() : {}
+        const adsData = adsRes.ok ? await adsRes.json() : {}
+
+        const impactContracts: {
+          CampaignId?: number | string
+          CampaignName?: string
+          Category?: string
+          Status?: string
+          CampaignImageUri?: string
+          DefaultPayout?: { Type?: string; Amount?: number; Percentage?: number }
+        }[] = Array.isArray(contractsData) ? contractsData : contractsData.Contracts ?? []
+
+        const impactAdsAll: ImpactAd[] = Array.isArray(adsData) ? adsData : adsData.Ads ?? []
+        _impactAdsCache.ads = impactAdsAll
+        _impactAdsCache.loaded = true
+
+        const impactAdCampaignIds = new Set(impactAdsAll.map((a) => String(a.CampaignId)))
 
         _cache.promotions = Array.isArray(promotions) ? promotions : []
 
@@ -214,7 +255,32 @@ export default function BrandsPage() {
           }
         )
 
-        const all = [...awinBrands, ...cfBrands]
+        const impactBrands: Brand[] = impactContracts.map((c) => {
+          const payout = c.DefaultPayout
+          const commissionDisplay = payout
+            ? payout.Type === 'FLAT'
+              ? `$${payout.Amount ?? '?'}`
+              : `${payout.Percentage ?? '?'}%`
+            : '—'
+          const commissionSortValue = payout
+            ? (payout.Amount ?? payout.Percentage ?? 0)
+            : 0
+          return {
+            id: `impact-${c.CampaignId}`,
+            name: c.CampaignName ?? `Campaign #${c.CampaignId}`,
+            network: 'Impact' as const,
+            logoUrl: c.CampaignImageUri,
+            sector: c.Category,
+            status: c.Status ?? 'ACTIVE',
+            commissionDisplay,
+            commissionSortValue,
+            hasPromos: impactAdCampaignIds.has(String(c.CampaignId)),
+            hasFeed: false,
+            networkHref: '/impact',
+          }
+        })
+
+        const all = [...awinBrands, ...cfBrands, ...impactBrands]
         _cache.brands = all
         setBrands(all)
       } catch (e) {
@@ -259,6 +325,7 @@ export default function BrandsPage() {
       list = list.filter(
         (b) =>
           b.network === 'Awin' ||
+          b.network === 'Impact' ||
           b.status.toLowerCase() === 'active' ||
           b.status.toLowerCase() === 'joined'
       )
@@ -308,11 +375,19 @@ export default function BrandsPage() {
         )
       : []
 
+  const impactAds: ImpactAd[] =
+    expandedBrand?.network === 'Impact'
+      ? (_impactAdsCache.ads ?? []).filter(
+          (a) => String(a.CampaignId) === String(expandedBrand.id.split('-').slice(1).join('-'))
+        )
+      : []
+
   const hasAnyCollateral =
     awinPromos.length > 0 ||
     cfBanners.length > 0 ||
     cfCoupons.length > 0 ||
     cfPromos.length > 0 ||
+    impactAds.length > 0 ||
     (expandedBrand?.hasFeed ?? false)
 
   return (
@@ -322,7 +397,7 @@ export default function BrandsPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {loading
             ? 'Loading…'
-            : `${filtered.length} of ${brands.length} brands across both networks`}
+            : `${filtered.length} of ${brands.length} brands across all networks`}
         </p>
       </div>
 
@@ -351,6 +426,7 @@ export default function BrandsPage() {
           <option value="all">All Networks</option>
           <option value="Awin">Awin</option>
           <option value="Commission Factory">Commission Factory</option>
+          <option value="Impact">Impact</option>
         </select>
         <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
           <input
@@ -434,6 +510,8 @@ export default function BrandsPage() {
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                             brand.network === 'Awin'
                               ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                              : brand.network === 'Impact'
+                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
                               : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                           }`}
                         >
@@ -452,7 +530,8 @@ export default function BrandsPage() {
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                             brand.status.toLowerCase() === 'active' ||
-                            brand.status.toLowerCase() === 'joined'
+                            brand.status.toLowerCase() === 'joined' ||
+                            brand.status === 'ACTIVE'
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
                               : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                           }`}
@@ -651,6 +730,50 @@ export default function BrandsPage() {
                                         {b.TrackingUrl && (
                                           <a
                                             href={b.TrackingUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="mt-1 block text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                                          >
+                                            Tracking link ↗
+                                          </a>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </section>
+                              )}
+
+                              {/* Impact Ads */}
+                              {impactAds.length > 0 && (
+                                <section>
+                                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                                    Ads ({impactAds.length})
+                                  </h3>
+                                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {impactAds.map((a, i) => (
+                                      <div
+                                        key={a.Id ?? i}
+                                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm"
+                                      >
+                                        {a.ImageLink && (
+                                          <img
+                                            src={a.ImageLink}
+                                            alt={a.Name ?? 'Ad'}
+                                            className="max-w-full max-h-24 object-contain mb-2 rounded"
+                                          />
+                                        )}
+                                        <p className="font-medium text-slate-700 dark:text-slate-300 text-xs truncate">
+                                          {a.Name ?? a.SubType ?? a.Type ?? '—'}
+                                        </p>
+                                        {(a.Width || a.Height) && (
+                                          <p className="text-xs text-slate-400 dark:text-slate-500">
+                                            {a.Width} × {a.Height}px
+                                          </p>
+                                        )}
+                                        {a.TrackingLink && (
+                                          <a
+                                            href={a.TrackingLink}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
