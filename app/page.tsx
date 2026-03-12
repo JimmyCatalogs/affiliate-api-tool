@@ -815,7 +815,7 @@ export default function BrandsPage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  downloadCSV(brand, awinPromos, cfBanners, cfCoupons, cfPromos)
+                                  downloadCSV(brand, awinPromos, cfBanners, cfCoupons, cfPromos, impactAds)
                                 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                               >
