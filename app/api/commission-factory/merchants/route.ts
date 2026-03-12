@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   const apiKey = process.env.COMMISSION_FACTORY_API_KEY
 
   if (!apiKey) {
@@ -10,8 +10,12 @@ export async function GET() {
     )
   }
 
+  const { searchParams } = new URL(request.url)
+  const status = searchParams.get('status')
+  const statusParam = status ? `&status=${encodeURIComponent(status)}` : ''
+
   const res = await fetch(
-    `https://api.commissionfactory.com/V1/Affiliate/Merchants?apiKey=${encodeURIComponent(apiKey)}`,
+    `https://api.commissionfactory.com/V1/Affiliate/Merchants?apiKey=${encodeURIComponent(apiKey)}${statusParam}`,
     { cache: 'no-store' }
   )
 

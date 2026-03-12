@@ -84,6 +84,7 @@ interface Transaction {
 
 const _cache: {
   merchants?: Merchant[]
+  merchantsJoined?: Merchant[]
   datafeeds?: DataFeed[]
   banners?: Banner[]
   coupons?: Coupon[]
@@ -119,21 +120,26 @@ export default function CommissionFactoryPage() {
 
   const [merchantSearch, setMerchantSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
+  const [activeOnly, setActiveOnly] = useState(true)
 
-  function fetchMerchants() {
-    if (_cache.merchants) {
-      setMerchants(_cache.merchants)
+  function fetchMerchants(joinedOnly: boolean) {
+    const cacheKey = joinedOnly ? 'merchantsJoined' : 'merchants'
+    if (_cache[cacheKey]) {
+      setMerchants(_cache[cacheKey]!)
       setLoadingMerchants(false)
       return
     }
     setLoadingMerchants(true)
     setErrorMerchants(null)
-    fetch('/api/commission-factory/merchants')
+    const url = joinedOnly
+      ? '/api/commission-factory/merchants?status=Joined'
+      : '/api/commission-factory/merchants'
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
         const result = Array.isArray(data) ? data : []
-        _cache.merchants = result
+        _cache[cacheKey] = result
         setMerchants(result)
       })
       .catch((e) => setErrorMerchants(e.message))
@@ -241,16 +247,16 @@ export default function CommissionFactoryPage() {
   }
 
   useEffect(() => {
-    const allCached = _cache.merchants && _cache.datafeeds && _cache.banners && _cache.coupons && _cache.promotions && _cache.transactions
+    const allCached = _cache.merchantsJoined && _cache.datafeeds && _cache.banners && _cache.coupons && _cache.promotions && _cache.transactions
     if (allCached) {
-      fetchMerchants()
+      fetchMerchants(true)
       fetchDatafeeds()
       fetchBanners()
       fetchCoupons()
       fetchPromotions()
       fetchTransactions()
     } else {
-      fetchMerchants()
+      fetchMerchants(true)
       setTimeout(fetchDatafeeds, 400)
       setTimeout(fetchBanners, 800)
       setTimeout(fetchCoupons, 1200)
@@ -259,6 +265,11 @@ export default function CommissionFactoryPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    fetchMerchants(activeOnly)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOnly])
 
   function loadFeedItems(feedId: number) {
     setSelectedFeedId(feedId)
@@ -304,13 +315,24 @@ export default function CommissionFactoryPage() {
               </span>
             )}
           </h2>
-          <input
-            type="text"
-            placeholder="Search by name or category..."
-            value={merchantSearch}
-            onChange={(e) => setMerchantSearch(e.target.value)}
-            className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
-          />
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Search by name or category..."
+              value={merchantSearch}
+              onChange={(e) => setMerchantSearch(e.target.value)}
+              className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+            />
+            <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={activeOnly}
+                onChange={(e) => setActiveOnly(e.target.checked)}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              Active only
+            </label>
+          </div>
         </div>
 
         {loadingMerchants && (
@@ -320,7 +342,7 @@ export default function CommissionFactoryPage() {
         {errorMerchants && (
           <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-4">
             <span>{errorMerchants}</span>
-            <button onClick={fetchMerchants} className="shrink-0 rounded-md bg-red-100 dark:bg-red-900/40 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/60 transition-colors">Retry</button>
+            <button onClick={() => fetchMerchants(activeOnly)} className="shrink-0 rounded-md bg-red-100 dark:bg-red-900/40 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/60 transition-colors">Retry</button>
           </div>
         )}
 

@@ -115,9 +115,7 @@ export default function BrandsPage() {
 
   const [sort, setSort] = useState<SortKey>('commission')
   const [networkFilter, setNetworkFilter] = useState<NetworkFilter>('all')
-  const [activeOnly, setActiveOnly] = useState(false)
-  const [promoFilter, setPromoFilter] = useState(false)
-  const [feedFilter, setFeedFilter] = useState(false)
+  const [joinedOnly, setJoinedOnly] = useState(true)
   const [search, setSearch] = useState('')
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -257,12 +255,13 @@ export default function BrandsPage() {
   const filtered = useMemo(() => {
     let list = brands
     if (networkFilter !== 'all') list = list.filter((b) => b.network === networkFilter)
-    if (activeOnly)
+    if (joinedOnly)
       list = list.filter(
-        (b) => b.status.toLowerCase() === 'active' || b.status.toLowerCase() === 'joined'
+        (b) =>
+          b.network === 'Awin' ||
+          b.status.toLowerCase() === 'active' ||
+          b.status.toLowerCase() === 'joined'
       )
-    if (promoFilter) list = list.filter((b) => b.hasPromos)
-    if (feedFilter) list = list.filter((b) => b.hasFeed)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(
@@ -273,7 +272,7 @@ export default function BrandsPage() {
       if (sort === 'commission') return b.commissionSortValue - a.commissionSortValue
       return a.name.localeCompare(b.name)
     })
-  }, [brands, sort, networkFilter, activeOnly, promoFilter, feedFilter, search])
+  }, [brands, sort, networkFilter, joinedOnly, search])
 
   // Derive collateral for the currently expanded brand
   const expandedBrand = brands.find((b) => b.id === expandedId) ?? null
@@ -356,29 +355,11 @@ export default function BrandsPage() {
         <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
           <input
             type="checkbox"
-            checked={activeOnly}
-            onChange={(e) => setActiveOnly(e.target.checked)}
+            checked={joinedOnly}
+            onChange={(e) => setJoinedOnly(e.target.checked)}
             className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
           />
-          Active only
-        </label>
-        <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={promoFilter}
-            onChange={(e) => setPromoFilter(e.target.checked)}
-            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-          />
-          Has promotions
-        </label>
-        <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={feedFilter}
-            onChange={(e) => setFeedFilter(e.target.checked)}
-            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-          />
-          Has data feed
+          Joined only
         </label>
       </div>
 
