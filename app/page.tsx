@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react'
 interface Brand {
   id: string
   name: string
-  network: 'Awin' | 'Commission Factory' | 'Impact'
+  network: 'Awin' | 'Commission Factory' | 'Impact' | 'CJ Affiliate'
   logoUrl?: string
   sector?: string
   status: string
@@ -70,8 +70,18 @@ interface CFPromo {
   EndDate?: string
 }
 
+interface CJAdvertiser {
+  'advertiser-id'?: string | number
+  'advertiser-name'?: string
+  'primary-category'?: { parent?: string; child?: string }
+  'seven-day-epc'?: string
+  'three-month-epc'?: string
+  'commission-terms'?: string
+  'network-rank'?: string
+}
+
 type SortKey = 'commission' | 'name'
-type NetworkFilter = 'all' | 'Awin' | 'Commission Factory' | 'Impact'
+type NetworkFilter = 'all' | 'Awin' | 'Commission Factory' | 'Impact' | 'CJ Affiliate'
 
 const _cache: { brands?: Brand[]; promotions?: AwinPromotion[] } = {}
 
@@ -148,13 +158,14 @@ export default function BrandsPage() {
 
     async function load() {
       try {
-        const [progRes, promoRes, merchantRes, feedRes, contractsRes, adsRes] = await Promise.all([
+        const [progRes, promoRes, merchantRes, feedRes, contractsRes, adsRes, cjRes] = await Promise.all([
           fetch('/api/awin/programmes'),
           fetch('/api/awin/promotions'),
           fetch('/api/commission-factory/merchants'),
           fetch('/api/commission-factory/datafeeds'),
           fetch('/api/impact/contracts'),
           fetch('/api/impact/ads'),
+          fetch('/api/cj/advertisers'),
         ])
 
         const programmes = progRes.ok ? await progRes.json() : []
@@ -163,6 +174,7 @@ export default function BrandsPage() {
         const datafeeds = feedRes.ok ? await feedRes.json() : []
         const contractsData = contractsRes.ok ? await contractsRes.json() : {}
         const adsData = adsRes.ok ? await adsRes.json() : {}
+        const cjAdvertisers: CJAdvertiser[] = cjRes.ok ? await cjRes.json() : []
 
         const impactContracts: {
           CampaignId?: number | string
@@ -280,7 +292,29 @@ export default function BrandsPage() {
           }
         })
 
-        const all = [...awinBrands, ...cfBrands, ...impactBrands]
+        const cjBrands: Brand[] = cjAdvertisers.map((a) => {
+          const terms = a['commission-terms'] ?? ''
+          const numMatch = terms.match(/[\d.]+/)
+          const commissionSortValue = numMatch ? parseFloat(numMatch[0]) : 0
+          const commissionDisplay = terms || '—'
+          const cat = a['primary-category']
+          const sector = [cat?.parent, cat?.child].filter(Boolean).join(' > ') || undefined
+          return {
+            id: `cj-${a['advertiser-id']}`,
+            name: a['advertiser-name'] ?? `Advertiser #${a['advertiser-id']}`,
+            network: 'CJ Affiliate' as const,
+            logoUrl: undefined,
+            sector,
+            status: 'joined',
+            commissionDisplay,
+            commissionSortValue,
+            hasPromos: false,
+            hasFeed: false,
+            networkHref: '/cj',
+          }
+        })
+
+        const all = [...awinBrands, ...cfBrands, ...impactBrands, ...cjBrands]
         _cache.brands = all
         setBrands(all)
       } catch (e) {
@@ -427,6 +461,7 @@ export default function BrandsPage() {
           <option value="Awin">Awin</option>
           <option value="Commission Factory">Commission Factory</option>
           <option value="Impact">Impact</option>
+          <option value="CJ Affiliate">CJ Affiliate</option>
         </select>
         <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
           <input
@@ -512,6 +547,8 @@ export default function BrandsPage() {
                               ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
                               : brand.network === 'Impact'
                               ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                              : brand.network === 'CJ Affiliate'
+                              ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
                               : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                           }`}
                         >
