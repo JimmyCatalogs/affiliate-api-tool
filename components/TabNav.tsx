@@ -8,6 +8,8 @@ const tabs = [
   { label: 'Awin', href: '/awin' },
   { label: 'Commission Factory', href: '/commission-factory' },
   { label: 'Impact', href: '/impact' },
+  { label: 'CJ Affiliate', href: '/cj' },
+  { label: 'Pepperjam', href: '/pepperjam' },
 ]
 
 export default function TabNav() {

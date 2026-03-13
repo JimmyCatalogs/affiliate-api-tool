@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 
 interface Brand {
   id: string
   name: string
-  network: 'Awin' | 'Commission Factory' | 'Impact' | 'CJ Affiliate'
+  network: 'Awin' | 'Commission Factory' | 'Impact' | 'CJ Affiliate' | 'Pepperjam'
   logoUrl?: string
   sector?: string
   status: string
@@ -70,6 +70,16 @@ interface CFPromo {
   EndDate?: string
 }
 
+interface PepperjamProgram {
+  id?: string | number
+  name?: string
+  category?: string
+  status?: string
+  homepage?: string
+  commission_base?: string | number
+  commission_type?: string
+}
+
 interface CJAdvertiser {
   'advertiser-id'?: string | number
   'advertiser-name'?: string
@@ -81,7 +91,7 @@ interface CJAdvertiser {
 }
 
 type SortKey = 'commission' | 'name'
-type NetworkFilter = 'all' | 'Awin' | 'Commission Factory' | 'Impact' | 'CJ Affiliate'
+type NetworkFilter = 'all' | 'Awin' | 'Commission Factory' | 'Impact' | 'CJ Affiliate' | 'Pepperjam'
 
 const _cache: { brands?: Brand[]; promotions?: AwinPromotion[] } = {}
 
@@ -158,7 +168,7 @@ export default function BrandsPage() {
 
     async function load() {
       try {
-        const [progRes, promoRes, merchantRes, feedRes, contractsRes, adsRes, cjRes] = await Promise.all([
+        const [progRes, promoRes, merchantRes, feedRes, contractsRes, adsRes, cjRes, pjRes] = await Promise.all([
           fetch('/api/awin/programmes'),
           fetch('/api/awin/promotions'),
           fetch('/api/commission-factory/merchants'),
@@ -166,6 +176,7 @@ export default function BrandsPage() {
           fetch('/api/impact/contracts'),
           fetch('/api/impact/ads'),
           fetch('/api/cj/advertisers'),
+          fetch('/api/pepperjam/programs'),
         ])
 
         const programmes = progRes.ok ? await progRes.json() : []
@@ -175,6 +186,7 @@ export default function BrandsPage() {
         const contractsData = contractsRes.ok ? await contractsRes.json() : {}
         const adsData = adsRes.ok ? await adsRes.json() : {}
         const cjAdvertisers: CJAdvertiser[] = cjRes.ok ? await cjRes.json() : []
+        const pepperjamPrograms: PepperjamProgram[] = pjRes.ok ? await pjRes.json() : []
 
         const impactContracts: {
           CampaignId?: number | string
@@ -314,7 +326,30 @@ export default function BrandsPage() {
           }
         })
 
-        const all = [...awinBrands, ...cfBrands, ...impactBrands, ...cjBrands]
+        const pepperjamBrands: Brand[] = pepperjamPrograms.map((p) => {
+          const rate = typeof p.commission_base === 'string'
+            ? parseFloat(p.commission_base)
+            : (p.commission_base ?? 0)
+          const isFlat = p.commission_type === 'flat'
+          const commissionDisplay = rate
+            ? isFlat ? `$${rate}` : `${rate}%`
+            : '—'
+          return {
+            id: `pepperjam-${p.id}`,
+            name: p.name ?? `Program #${p.id}`,
+            network: 'Pepperjam' as const,
+            logoUrl: undefined,
+            sector: p.category || undefined,
+            status: p.status ?? 'active',
+            commissionDisplay,
+            commissionSortValue: rate,
+            hasPromos: false,
+            hasFeed: false,
+            networkHref: '/pepperjam',
+          }
+        })
+
+        const all = [...awinBrands, ...cfBrands, ...impactBrands, ...cjBrands, ...pepperjamBrands]
         _cache.brands = all
         setBrands(all)
       } catch (e) {
@@ -360,6 +395,7 @@ export default function BrandsPage() {
         (b) =>
           b.network === 'Awin' ||
           b.network === 'Impact' ||
+          b.network === 'Pepperjam' ||
           b.status.toLowerCase() === 'active' ||
           b.status.toLowerCase() === 'joined'
       )
@@ -462,6 +498,7 @@ export default function BrandsPage() {
           <option value="Commission Factory">Commission Factory</option>
           <option value="Impact">Impact</option>
           <option value="CJ Affiliate">CJ Affiliate</option>
+          <option value="Pepperjam">Pepperjam</option>
         </select>
         <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
           <input
@@ -502,9 +539,8 @@ export default function BrandsPage() {
               {filtered.map((brand) => {
                 const isExpanded = expandedId === brand.id
                 return (
-                  <>
+                  <React.Fragment key={brand.id}>
                     <tr
-                      key={brand.id}
                       onClick={() => handleRowClick(brand)}
                       className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
@@ -549,6 +585,8 @@ export default function BrandsPage() {
                               ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
                               : brand.network === 'CJ Affiliate'
                               ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                              : brand.network === 'Pepperjam'
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
                               : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                           }`}
                         >
@@ -866,7 +904,7 @@ export default function BrandsPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 )
               })}
             </tbody>
